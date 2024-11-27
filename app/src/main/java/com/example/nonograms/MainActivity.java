@@ -14,6 +14,7 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import android.graphics.Color;
 import android.widget.CompoundButton;
+// test
 
 public class MainActivity extends AppCompatActivity {
     private ToggleButton blackSquareToggle;
