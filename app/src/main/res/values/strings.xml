@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Nonograms</string>
+    <string name="button1_name">Button 1</string>
+    <string name="file">파일</string>
+    <string name="create_new">생성</string>
+    <string name="open">열기</string>
+</resources>
