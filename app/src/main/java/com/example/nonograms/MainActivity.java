@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
         int screenWidth = getResources().getDisplayMetrics().widthPixels;
         int screenHeight = getResources().getDisplayMetrics().heightPixels;
         int minDimension = Math.min(screenWidth, screenHeight);
-        int cellSize = minDimension / 18;
+        int cellSize = minDimension / 14;
 
         layoutParams = new TableRow.LayoutParams(cellSize, cellSize);
         layoutParams.setMargins(0, 0, 0, 0);
@@ -55,21 +55,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // Life를 위한 별도의 행 추가
-        TableRow lifeRow = new TableRow(this);
-        lifeRow.setGravity(Gravity.LEFT);  // 왼쪽 정렬
-
-        lifeTextView = new TextView(this);
-        lifeTextView.setText("Life: " + life);
-        lifeTextView.setTextSize(20);
-        TableRow.LayoutParams lifeParams = new TableRow.LayoutParams(
-                TableRow.LayoutParams.WRAP_CONTENT,
-                TableRow.LayoutParams.WRAP_CONTENT
-        );
-        lifeTextView.setLayoutParams(lifeParams);
-        lifeRow.addView(lifeTextView);
-        tableLayout.addView(lifeRow);
-
         // 위쪽 힌트를 위한 3줄
         for(int row = 0; row < 3; row++) {
             TableRow hintRow = new TableRow(this);
@@ -78,6 +63,11 @@ public class MainActivity extends AppCompatActivity {
             // 왼쪽 여백을 위한 빈 TextView 추가
             for(int i = 0; i < 3; i++) {
                 TextView spacer = new SquareTextView(this);
+                if(row == 0 && i == 0) {  // 첫 번째 TextView에 Life 표시
+                    lifeTextView = spacer;
+                    lifeTextView.setText("Life: " + life);
+                    lifeTextView.setTextSize(10);
+                }
                 spacer.setLayoutParams(layoutParams);
                 spacer.setGravity(Gravity.CENTER);
                 hintRow.addView(spacer);
