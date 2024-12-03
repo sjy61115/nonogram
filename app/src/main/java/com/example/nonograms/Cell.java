@@ -16,6 +16,11 @@ public class Cell extends AppCompatButton{
     public Cell(@NonNull Context context) {
         super(context);
 
+        // 정사각형 유지를 위한 설정 추가
+        setMinimumWidth(0);
+        setMinimumHeight(0);
+        setPadding(0, 0, 0, 0);
+
         // selector 배경 설정
         setBackgroundResource(R.drawable.cell_selector);
 
@@ -37,7 +42,7 @@ public class Cell extends AppCompatButton{
         return numBlackSquares;
     }
 
-    // 이 사각형을 검정 사각형으로 표시
+    // 이 사각형을 검정 사각형으 표시
     public boolean markBlackSquare() {
         if (checked) {
             return true; // 이미 체크되어 있으면 실행하지 않음
@@ -58,5 +63,13 @@ public class Cell extends AppCompatButton{
         checked = !checked;
         setText(checked ? "X" : "");
         return checked;
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int size = Math.min(MeasureSpec.getSize(widthMeasureSpec), 
+                          MeasureSpec.getSize(heightMeasureSpec));
+        int finalMeasureSpec = MeasureSpec.makeMeasureSpec(size, MeasureSpec.EXACTLY);
+        super.onMeasure(finalMeasureSpec, finalMeasureSpec);
     }
 }

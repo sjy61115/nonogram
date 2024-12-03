@@ -9,11 +9,11 @@ import android.widget.TextView;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.ToggleButton;
-import com.example.nonograms.Cell;
 import android.widget.Toast;
 import java.util.ArrayList;
 import android.graphics.Color;
 import android.widget.CompoundButton;
+import android.content.Context;
 
 public class MainActivity extends AppCompatActivity {
     private ToggleButton blackSquareToggle;
@@ -22,50 +22,75 @@ public class MainActivity extends AppCompatActivity {
     private Cell[][] buttons = new Cell[5][5];
     private TextView[][] topHints = new TextView[3][5];  // 위쪽 힌트 [3줄][5열]
     private TextView[][] leftHints = new TextView[5][3];  // 왼쪽 힌트 [5행][3줄]
+    private TableRow.LayoutParams layoutParams;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // 화면의 너비와 높이 중 작은 값을 기준으로 셀 크기 계산
+        int screenWidth = getResources().getDisplayMetrics().widthPixels;
+        int screenHeight = getResources().getDisplayMetrics().heightPixels;
+        int minDimension = Math.min(screenWidth, screenHeight);
+        int cellSize = minDimension / 18;
+
+        layoutParams = new TableRow.LayoutParams(cellSize, cellSize);
+        layoutParams.setMargins(0, 0, 0, 0);
+
         TableLayout tableLayout = findViewById(R.id.tableLayout);
 
-        // Life와 위쪽 힌트를 위한 3줄
+        // TextView 크기 조정을 위한 클래스
+        class SquareTextView extends androidx.appcompat.widget.AppCompatTextView {
+            public SquareTextView(Context context) {
+                super(context);
+            }
+
+            @Override
+            protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+                int size = Math.min(View.MeasureSpec.getSize(widthMeasureSpec), 
+                                  View.MeasureSpec.getSize(heightMeasureSpec));
+                int finalMeasureSpec = View.MeasureSpec.makeMeasureSpec(size, View.MeasureSpec.EXACTLY);
+                super.onMeasure(finalMeasureSpec, finalMeasureSpec);
+            }
+        }
+
+        // Life를 위한 별도의 행 추가
+        TableRow lifeRow = new TableRow(this);
+        lifeRow.setGravity(Gravity.LEFT);  // 왼쪽 정렬
+
+        lifeTextView = new TextView(this);
+        lifeTextView.setText("Life: " + life);
+        lifeTextView.setTextSize(20);
+        TableRow.LayoutParams lifeParams = new TableRow.LayoutParams(
+                TableRow.LayoutParams.WRAP_CONTENT,
+                TableRow.LayoutParams.WRAP_CONTENT
+        );
+        lifeTextView.setLayoutParams(lifeParams);
+        lifeRow.addView(lifeTextView);
+        tableLayout.addView(lifeRow);
+
+        // 위쪽 힌트를 위한 3줄
         for(int row = 0; row < 3; row++) {
             TableRow hintRow = new TableRow(this);
             hintRow.setGravity(Gravity.CENTER);
-            
-            // 첫 번째 줄에만 Life 표시
-            if(row == 0) {
-                lifeTextView = new TextView(this);
-                lifeTextView.setText("Life: " + life);
-                lifeTextView.setTextSize(20);
-                TableRow.LayoutParams lifeParams = new TableRow.LayoutParams(
-                    TableRow.LayoutParams.WRAP_CONTENT,
-                    TableRow.LayoutParams.WRAP_CONTENT
-                );
-                lifeParams.span = 3;  // 3칸 차지
-                lifeTextView.setLayoutParams(lifeParams);
-                hintRow.addView(lifeTextView);
-            } else {
-                // Life 자리에 빈 TextView 추가
-                for(int i = 0; i < 3; i++) {
-                    TextView spacer = new TextView(this);
-                    TableRow.LayoutParams params = new TableRow.LayoutParams(150, 150);
-                    spacer.setLayoutParams(params);
-                    hintRow.addView(spacer);
-                }
+
+            // 왼쪽 여백을 위한 빈 TextView 추가
+            for(int i = 0; i < 3; i++) {
+                TextView spacer = new SquareTextView(this);
+                spacer.setLayoutParams(layoutParams);
+                spacer.setGravity(Gravity.CENTER);
+                hintRow.addView(spacer);
             }
 
             // 위쪽 힌트 TextView 생성
             for(int col = 0; col < 5; col++) {
-                topHints[row][col] = new TextView(this);
-                TableRow.LayoutParams params = new TableRow.LayoutParams(150, 150);
-                topHints[row][col].setLayoutParams(params);
+                topHints[row][col] = new SquareTextView(this);
+                topHints[row][col].setLayoutParams(layoutParams);
                 topHints[row][col].setGravity(Gravity.CENTER);
                 hintRow.addView(topHints[row][col]);
             }
-            
+
             tableLayout.addView(hintRow);
         }
 
@@ -74,11 +99,10 @@ public class MainActivity extends AppCompatActivity {
             TableRow tableRow = new TableRow(this);
             tableRow.setGravity(Gravity.CENTER);
 
-            // 왼쪽 힌트 TextView 3개 생성
+            // 왼쪽 힌트 TextView 생성
             for(int hint = 0; hint < 3; hint++) {
-                leftHints[i][hint] = new TextView(this);
-                TableRow.LayoutParams params = new TableRow.LayoutParams(150, 150);
-                leftHints[i][hint].setLayoutParams(params);
+                leftHints[i][hint] = new SquareTextView(this);
+                leftHints[i][hint].setLayoutParams(layoutParams);
                 leftHints[i][hint].setGravity(Gravity.CENTER);
                 tableRow.addView(leftHints[i][hint]);
             }
@@ -86,66 +110,64 @@ public class MainActivity extends AppCompatActivity {
             // 버튼 생성
             for(int j = 0; j < 5; j++) {
                 buttons[i][j] = new Cell(this);
-                TableRow.LayoutParams buttonParams = new TableRow.LayoutParams(150, 150);
-                buttonParams.setMargins(0, 0, 0, 0);
-                buttons[i][j].setLayoutParams(buttonParams);
-                buttons[i][j].setPadding(0, 0, 0, 0);
+                buttons[i][j].setLayoutParams(layoutParams);
+                
+                final int row = i;
+                final int col = j;
                 
                 buttons[i][j].setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Cell cell = (Cell)v;
-                        if (blackSquareToggle.isChecked()) {
-                            boolean isCorrect = cell.markBlackSquare();
-                            if (!isCorrect) {
+                        if(blackSquareToggle.isChecked()) {
+                            // BLACK SQUARE 모드
+                            if(!buttons[row][col].markBlackSquare()) {
                                 life--;
                                 lifeTextView.setText("Life: " + life);
-                                if (life <= 0) {
+                                if(life <= 0) {
                                     gameOver();
                                 }
-                            } else {
-                                if (Cell.getNumBlackSquares() == 0) {
-                                    gameWin();
-                                }
+                            } else if(Cell.getNumBlackSquares() == 0) {
+                                gameWin();
                             }
                         } else {
-                            cell.toggleX();
+                            // X 표시 모드
+                            buttons[row][col].toggleX();
                         }
                     }
                 });
                 
                 tableRow.addView(buttons[i][j]);
             }
+            
             tableLayout.addView(tableRow);
         }
 
-        // BLACK SQUARE 토글 버튼 생성 및 스타일 설정
+        // BLACK SQUARE 토글 버튼 생성
         blackSquareToggle = new ToggleButton(this);
         blackSquareToggle.setTextOn("BLACK SQUARE");
         blackSquareToggle.setTextOff("BLACK SQUARE");
-        blackSquareToggle.setText("BLACK SQUARE");  // 초기 텍스트 설정
-        blackSquareToggle.setBackgroundColor(Color.LTGRAY);  // 기본 배경색
-        
-        // 토글 상태 변경 리스너 추가
+        blackSquareToggle.setText("BLACK SQUARE");
+        TableLayout.LayoutParams toggleParams = new TableLayout.LayoutParams(
+                TableLayout.LayoutParams.WRAP_CONTENT,
+                TableLayout.LayoutParams.WRAP_CONTENT
+        );
+        toggleParams.topMargin = cellSize / 2;
+        toggleParams.gravity = Gravity.CENTER;
+        blackSquareToggle.setLayoutParams(toggleParams);
+        blackSquareToggle.setBackgroundColor(Color.WHITE);  // 초기 배경색 설정
+
+        // 토글 버튼 상태에 따라 배경색 변경
         blackSquareToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    blackSquareToggle.setBackgroundColor(Color.DKGRAY);  // 켜진 상태
-                    blackSquareToggle.setTextColor(Color.WHITE);
+                    blackSquareToggle.setBackgroundColor(Color.LTGRAY);  // 눌렸을 때 색상
                 } else {
-                    blackSquareToggle.setBackgroundColor(Color.LTGRAY);  // 꺼진 상태
-                    blackSquareToggle.setTextColor(Color.BLACK);
+                    blackSquareToggle.setBackgroundColor(Color.WHITE);  // 기본 색상
                 }
             }
         });
 
-        TableLayout.LayoutParams toggleParams = new TableLayout.LayoutParams(
-            TableLayout.LayoutParams.MATCH_PARENT,
-            TableLayout.LayoutParams.WRAP_CONTENT
-        );
-        toggleParams.topMargin = 50;
-        blackSquareToggle.setLayoutParams(toggleParams);
         tableLayout.addView(blackSquareToggle);
 
         // 모든 셀이 생성된 후 힌트 계산 및 표시
@@ -157,7 +179,7 @@ public class MainActivity extends AppCompatActivity {
         for(int col = 0; col < 5; col++) {
             ArrayList<Integer> hints = new ArrayList<>();
             int count = 0;
-            
+
             // 연속된 검은색 개수 계산
             for(int row = 0; row < 5; row++) {
                 if(buttons[row][col].isBlackSquare()) {
@@ -170,7 +192,7 @@ public class MainActivity extends AppCompatActivity {
             if(count > 0) {
                 hints.add(count);
             }
-            
+
             // 힌트가 없으면 "0" 추가
             if(hints.isEmpty()) {
                 topHints[2][col].setText("0");
@@ -186,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
         for(int row = 0; row < 5; row++) {
             ArrayList<Integer> hints = new ArrayList<>();
             int count = 0;
-            
+
             // 연속된 검은색 개수 계산
             for(int col = 0; col < 5; col++) {
                 if(buttons[row][col].isBlackSquare()) {
@@ -199,7 +221,7 @@ public class MainActivity extends AppCompatActivity {
             if(count > 0) {
                 hints.add(count);
             }
-            
+
             // 힌트가 없으면 "0" 추가
             if(hints.isEmpty()) {
                 leftHints[row][2].setText("0");
